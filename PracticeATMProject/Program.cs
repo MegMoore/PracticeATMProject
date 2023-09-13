@@ -144,10 +144,38 @@ internal class Program
                     var Deposit = Convert.ToDecimal(Console.ReadLine());
                     Console.WriteLine($"Enter Deposit Description: ");
                     var DepositDescription = Console.ReadLine();
-                    int AID = await CreateTransaction(Deposit, jsonOptions, CID, DepositDescription);
+                    int AID = await CreateTransaction(Deposit, jsonOptions, CID, DepositDescription, "D");
                     decimal NewBalance = Convert.ToDecimal(deposit(Deposit, AID, jsonOptions));
                     Console.WriteLine($"New Balance: {NewBalance}");
                 return 1;
+                    case 4:
+                    Console.WriteLine($"Enter Withdraw Amount: ");
+                    var Withdraw = Convert.ToDecimal(Console.ReadLine());
+                    Console.WriteLine($"Enter Withdraw Description: ");
+                    var WithdrawDescription = Console.ReadLine();
+                    int AID2 = await CreateTransaction(Withdraw, jsonOptions, CID, WithdrawDescription, "W");
+                    decimal NewBalance2 = Convert.ToDecimal(withdraw(Withdraw, AID2, jsonOptions));
+                    Console.WriteLine($"New Balance: {NewBalance2}");
+                return 1;
+                case 5:
+                    Console.WriteLine($"Enter Transfer Amount: ");
+                    var Transfer = Convert.ToDecimal(Console.ReadLine());
+
+                    Console.WriteLine($"Enter Transfer Description: ");
+                    var TransferDescription = Console.ReadLine();
+
+                    Console.WriteLine($"Select which account to transfer From: ");
+                    int AID3 = await CreateTransaction(Transfer, jsonOptions, CID, TransferDescription, "W");
+                    decimal NewBalance3 = Convert.ToDecimal(withdraw(Transfer, AID3, jsonOptions));
+                    Console.WriteLine($"New Balance: {NewBalance3}");
+
+                    Console.WriteLine($"Select which account to transfer To: ");
+                    int AID4 = await CreateTransaction(Transfer, jsonOptions, CID, TransferDescription, "D");
+                    decimal NewBalance4 = Convert.ToDecimal(deposit(Transfer, AID4, jsonOptions));
+                    Console.WriteLine($"New Balance: {NewBalance4}");
+
+                    return 1;
+
                 default: return 1;
 
             }
@@ -176,16 +204,45 @@ internal class Program
             return null;
         }
 
-        async Task<int> CreateTransaction(decimal D,JsonSerializerOptions JsonOptions, int CID, string DD) {
+        async Task<int> CreateTransaction(decimal D,JsonSerializerOptions JsonOptions, int CID, string DD, string Type) {
             HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, $"{baseurl}/api/transactions");
             var acc = DisplayAccounts(CID, JsonOptions);
-            Transaction T = new() {
-                AccountID = acc.Id,
-                PreviousBalance = acc.Result.Balance,
-                TransactionType = "D",
-                NewBalance = acc.Result.Balance + D,
-                Description = DD
-            };
+            //Transaction T = new() {
+            //  AccountID = acc.Id,
+            //  PreviousBalance = acc.Result.Balance,
+            //  TransactionType = Type,
+            //  NewBalance = acc.Result.Balance + D,
+            //  Description = DD
+            // };
+
+            Transaction T = new();
+
+
+            switch (Type)
+            {
+                case "D":
+                    T = new()
+                    {
+                        AccountID = acc.Id,
+                        PreviousBalance = acc.Result.Balance,
+                        TransactionType = Type,
+                        NewBalance = acc.Result.Balance + D,
+                        Description = DD
+                    };
+                    break;
+                case "W":
+                    T = new()
+                    {
+                        AccountID = acc.Id,
+                        PreviousBalance = acc.Result.Balance,
+                        TransactionType = Type,
+                        NewBalance = acc.Result.Balance - D,
+                        Description = DD
+                    };
+                    break;
+               
+            }
+
 
             var json = JsonSerializer.Serialize<Transaction>(T, JsonOptions);
             req.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
@@ -203,6 +260,19 @@ internal class Program
             HttpResponseMessage resp = await http.SendAsync(req);
             return acc.Balance;
         }
-    }
 
+        ///Witdraw Method
+
+        async Task<decimal> withdraw(decimal IN, int AID, JsonSerializerOptions jsonOptions)
+        {
+            var JR = await GetAccountByAIDAsync(http, jsonOptions, AID);
+            var acc = (Account)JR.DataReturned;
+            acc.Balance -= IN;
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Put, $"{baseurl}/api/accounts/{AID}");
+            var json = JsonSerializer.Serialize<Account>(acc, jsonOptions);
+            req.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            HttpResponseMessage resp = await http.SendAsync(req);
+            return acc.Balance;
+        }
+    }
 }
