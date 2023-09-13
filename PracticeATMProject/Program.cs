@@ -1,4 +1,5 @@
 ﻿using PracticeATMProject;
+using System.Security.Cryptography;
 using System.Text.Json;
 using static System.Net.WebRequestMethods;
 
@@ -51,20 +52,45 @@ internal class Program
             };
 
         }
-        async Task<JsonResponse> GetAccountsAsync(HttpClient http, JsonSerializerOptions jsonOptions, int CID) {
-            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, $"{baseurl}/api/accounts/{CID}");//calling what you want
+
+        async Task<JsonResponse> GetAccountsByCIDAsync(HttpClient http, JsonSerializerOptions jsonOptions, int CID) {
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, $"{baseurl}/api/accounts");
             HttpResponseMessage resp = await http.SendAsync(req);
             Console.WriteLine($"Http ErrorCode is {resp.StatusCode}");
             if (resp.StatusCode != System.Net.HttpStatusCode.OK) {}
             var json = await resp.Content.ReadAsStringAsync();
-            var Accounts = (IEnumerable<Account>?)JsonSerializer.Deserialize(json, typeof(IEnumerable<Account>), jsonOptions);
+            List<Account> Accounts = (List<Account>)JsonSerializer.Deserialize(json, typeof(IEnumerable<Account>), jsonOptions);
             if (Accounts is null) {throw new Exception();}
+
+            List<Account> AccountsR = null;
+            foreach ( var a in Accounts ) {
+                if (a.CustomerID == CID) {
+                    AccountsR.Add(a);
+                }
+            }
+
             return new JsonResponse() {
                 HttpStatusCode = (int)resp.StatusCode,
-                DataReturned = Accounts
+                DataReturned = AccountsR
             };
 
         }
+
+        async Task<JsonResponse> GetAccountByAIDAsync(HttpClient http, JsonSerializerOptions jsonOptions, int AID) {
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, $"{baseurl}/api/accounts/{AID}");
+            HttpResponseMessage resp = await http.SendAsync(req);
+            Console.WriteLine($"Http ErrorCode is {resp.StatusCode}");
+            if (resp.StatusCode != System.Net.HttpStatusCode.OK) { }
+            var json = await resp.Content.ReadAsStringAsync();
+            Account Account = (Account)JsonSerializer.Deserialize(json, typeof(IEnumerable<Account>), jsonOptions);
+            if (Account is null) { throw new Exception(); }
+            return new JsonResponse() {
+                HttpStatusCode = (int)resp.StatusCode,
+                DataReturned = Account
+            };
+
+        }
+
 
         async Task<int> Login(JsonSerializerOptions jsonOptions) {
             Console.WriteLine("CC: ");
@@ -110,8 +136,17 @@ internal class Program
                 }
                 return Output;
                 case 2:
-                    var balance =  await GetBalanceByCID(CID, jsonOptions);
+                    var balance = await GetBalanceByCID(CID, jsonOptions);
                     Console.WriteLine($"Balance: {balance}");
+                return 1;
+                case 3:
+                    Console.WriteLine($"Enter Deposit Amount: ");
+                    var Deposit = Convert.ToDecimal(Console.ReadLine());
+                    Console.WriteLine($"Enter Deposit Description: ");
+                    var DepositDescription = Console.ReadLine();
+                    int AID = await CreateTransaction(Deposit, jsonOptions, CID, DepositDescription);
+                    decimal NewBalance = Convert.ToDecimal(deposit(Deposit, AID, jsonOptions));
+                    Console.WriteLine($"New Balance: {NewBalance}");
                 return 1;
                 default: return 1;
 
@@ -120,11 +155,53 @@ internal class Program
 
 
         async Task<decimal> GetBalanceByCID(int cID, JsonSerializerOptions jsonOptions) {
-            int AID = Convert.ToInt32(DisplayAccounts(cID, jsonOptions));
+            Account JR = await DisplayAccounts(cID, jsonOptions);
+            return JR.Balance;
         }
-        async Task<int> DisplayAccounts(int cID, JsonSerializerOptions jsonOptions) {
-            var jsonResponse = await GetAccountsAsync(http, jsonOptions, cID);
-            var Customers = (IEnumerable<Customer>)jsonResponse.DataReturned;
+
+        async Task<Account> DisplayAccounts(int cID, JsonSerializerOptions jsonOptions) {
+            var jsonResponse = await GetAccountsByCIDAsync(http, jsonOptions, cID);
+            var Accounts = (IEnumerable<Account>)jsonResponse.DataReturned;
+            foreach (var a in Accounts) {
+                Console.WriteLine($"{a.ID}|{a.Description}|{a.Type}|{a.CreationDate}");
+            }
+            Console.WriteLine($"Select Account Number: ");
+            int IN = Convert.ToInt32(Console.ReadLine());
+            
+            foreach (var a in Accounts ) {
+                if (a.ID == IN) {
+                    return a;
+                }
+            }
+            return null;
+        }
+
+        async Task<int> CreateTransaction(decimal D,JsonSerializerOptions JsonOptions, int CID, string DD) {
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, $"{baseurl}/api/transactions");
+            var acc = DisplayAccounts(CID, JsonOptions);
+            Transaction T = new() {
+                AccountID = acc.Id,
+                PreviousBalance = acc.Result.Balance,
+                TransactionType = "D",
+                NewBalance = acc.Result.Balance + D,
+                Description = DD
+            };
+
+            var json = JsonSerializer.Serialize<Transaction>(T, JsonOptions);
+            req.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            HttpResponseMessage resp = await http.SendAsync(req);
+            return acc.Id;
+        }
+
+        async Task<decimal> deposit(decimal IN, int AID, JsonSerializerOptions JsonOptions) {
+            var JR = await GetAccountByAIDAsync(http, JsonOptions, AID);
+            var acc = (Account)JR.DataReturned;
+            acc.Balance += IN;
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Put, $"{baseurl}/api/accounts/{AID}");
+            var json = JsonSerializer.Serialize<Account>(acc, JsonOptions);
+            req.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            HttpResponseMessage resp = await http.SendAsync(req);
+            return acc.Balance;
         }
     }
 
