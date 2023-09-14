@@ -75,5 +75,22 @@ namespace PracticeATMProject.Classes {
                 DataReturned = TransactionsR
             };
         }
+        public static async Task<JsonResponse> CustomersAsync(HttpClient http, JsonSerializerOptions jsonOptions) {
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, $"{baseurl}/api/customers");//calling what you want
+            HttpResponseMessage resp = await http.SendAsync(req);
+            Console.WriteLine($"Http ErrorCode is {resp.StatusCode}");
+            if (resp.StatusCode != System.Net.HttpStatusCode.OK) { }
+            var json = await resp.Content.ReadAsStringAsync();
+            var customers = (IEnumerable<Customer>?)JsonSerializer.Deserialize(json, typeof(IEnumerable<Customer>), jsonOptions);
+            if (customers is null) {
+                throw new Exception();
+            }
+
+            return new JsonResponse() {
+                HttpStatusCode = (int)resp.StatusCode,
+                DataReturned = customers
+            };
+
+        }
     }
 }
