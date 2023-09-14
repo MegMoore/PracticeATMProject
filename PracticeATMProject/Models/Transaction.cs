@@ -6,8 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PracticeATMProject {
-    internal class Transaction {
+namespace PracticeATMProject.Models
+{
+    public class Transaction
+    {
         public int ID { get; set; }
         public int AccountID { get; set; }
         public virtual Account? Account { get; set; }

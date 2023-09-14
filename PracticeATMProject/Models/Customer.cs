@@ -6,12 +6,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PracticeATMProject
+namespace PracticeATMProject.Models
 {
-    internal class Customer
+    public class Customer
     {
         public int ID { get; set; }
-        [StringLength(30)] public string Name { get; set; } = String.Empty;
+        [StringLength(30)] public string Name { get; set; } = string.Empty;
         public int CardCode { get; set; }
         public int PinCode { get; set; }
         [Column(TypeName = "datetime")] public DateTime LastTransactionDate { get; set; }

@@ -6,8 +6,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PracticeATMProject {
-    internal class Account {
+namespace PracticeATMProject.Models
+{
+    public class Account
+    {
         public int ID { get; set; }
         [StringLength(2)]
         public string Type { get; set; } = string.Empty;
