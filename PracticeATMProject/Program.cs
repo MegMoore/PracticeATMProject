@@ -71,7 +71,7 @@ internal class Program {
             Console.WriteLine($"Http ErrorCode is {resp.StatusCode}");
             if (resp.StatusCode != System.Net.HttpStatusCode.OK) { }
             var json = await resp.Content.ReadAsStringAsync();
-            Account Account = (Account)JsonSerializer.Deserialize(json, typeof(IEnumerable<Account>), jsonOptions);
+            object? Account = JsonSerializer.Deserialize(json, typeof(Account), jsonOptions);
             if (Account is null) { throw new Exception(); }
             return new JsonResponse() {
                 HttpStatusCode = (int)resp.StatusCode,
