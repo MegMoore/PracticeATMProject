@@ -108,6 +108,8 @@ internal class Program
             return CID;
         }
         async Task<int> Display(int pcode, int CID, JsonSerializerOptions jsonOptions) {
+            int AID = 0;
+            decimal NewBalance = 0m;
             switch (pcode) {
                 case 1:
                     Console.WriteLine($"(1)Balance\n(2)Deposit\n(3)Withdraw\n(4)Transfer\n(5)Show Transactions)");
@@ -144,8 +146,8 @@ internal class Program
                     var Deposit = Convert.ToDecimal(Console.ReadLine());
                     Console.WriteLine($"Enter Deposit Description: ");
                     var DepositDescription = Console.ReadLine();
-                    int AID = await CreateTransaction(Deposit, jsonOptions, CID, DepositDescription, "D");
-                    decimal NewBalance = Convert.ToDecimal(deposit(Deposit, AID, jsonOptions));
+                    AID = await CreateTransaction(Deposit, jsonOptions, CID, DepositDescription, "D");
+                    NewBalance = Convert.ToDecimal(deposit(Deposit, AID, jsonOptions));
                     Console.WriteLine($"New Balance: {NewBalance}");
                 return 1;
                     case 4:
@@ -153,9 +155,9 @@ internal class Program
                     var Withdraw = Convert.ToDecimal(Console.ReadLine());
                     Console.WriteLine($"Enter Withdraw Description: ");
                     var WithdrawDescription = Console.ReadLine();
-                    int AID2 = await CreateTransaction(Withdraw, jsonOptions, CID, WithdrawDescription, "W");
-                    decimal NewBalance2 = Convert.ToDecimal(withdraw(Withdraw, AID2, jsonOptions));
-                    Console.WriteLine($"New Balance: {NewBalance2}");
+                    AID = await CreateTransaction(Withdraw, jsonOptions, CID, WithdrawDescription, "W");
+                    NewBalance = Convert.ToDecimal(withdraw(Withdraw, AID, jsonOptions));
+                    Console.WriteLine($"New Balance: {NewBalance}");
                 return 1;
                 case 5:
                     Console.WriteLine($"Enter Transfer Amount: ");
@@ -165,14 +167,14 @@ internal class Program
                     var TransferDescription = Console.ReadLine();
 
                     Console.WriteLine($"Select which account to transfer From: ");
-                    int AID3 = await CreateTransaction(Transfer, jsonOptions, CID, TransferDescription, "W");
-                    decimal NewBalance3 = Convert.ToDecimal(withdraw(Transfer, AID3, jsonOptions));
-                    Console.WriteLine($"New Balance: {NewBalance3}");
+                    AID = await CreateTransaction(Transfer, jsonOptions, CID, TransferDescription, "W");
+                    NewBalance = Convert.ToDecimal(withdraw(Transfer, AID, jsonOptions));
+                    Console.WriteLine($"New Balance: {NewBalance}");
 
                     Console.WriteLine($"Select which account to transfer To: ");
-                    int AID4 = await CreateTransaction(Transfer, jsonOptions, CID, TransferDescription, "D");
-                    decimal NewBalance4 = Convert.ToDecimal(deposit(Transfer, AID4, jsonOptions));
-                    Console.WriteLine($"New Balance: {NewBalance4}");
+                    AID = await CreateTransaction(Transfer, jsonOptions, CID, TransferDescription, "D");
+                    NewBalance = Convert.ToDecimal(deposit(Transfer, AID, jsonOptions));
+                    Console.WriteLine($"New Balance: {NewBalance}");
 
                     return 1;
 
