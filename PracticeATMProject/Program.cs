@@ -1,4 +1,5 @@
-﻿using PracticeATMProject;
+﻿using PracticeATMProject.Classes;
+using PracticeATMProject.Models;
 using System.Security.Cryptography;
 using System.Text.Json;
 //using System.Transactions;
@@ -107,87 +108,20 @@ internal class Program {
             decimal NewBalance = 0m;
             switch (pcode) {
                 case 1:
-                Console.WriteLine($"(B)Balance\n(D)Deposit\n(W)Withdraw\n(T)Transfer\n(S)Show Transactions\n(X)Logout");
-                Console.WriteLine("Enter Menu Option: ");
-                var Input1 = Console.ReadLine();
-                var Output = 0;
-                switch (Input1) {
-                    case "B":
-                    Output = 2;
-                    break;
-                    case "D":
-                    Output = 3;
-                    break;
-                    case "W":
-                    Output = 4;
-                    break;
-                    case "T":
-                    Output = 5;
-                    break;
-                    case "S":
-                    Output = 6;
-                    break;
-                    case "X":
-                    Output= 7;
-                    break;
-                    default:
-                    Output = 1;
-                    break;
-                }
-                return Output;
+                return await Menu.MainMenu();
                 case 2:
-                var balance = await GetBalanceByCID(CID, jsonOptions);
-                Console.WriteLine($"Balance: {balance}");
-                return 1;
+                return await Menu.DisplayBalance(CID, jsonOptions, http);
                 case 3:
-                Console.WriteLine($"Enter Deposit Amount: ");
-                var Deposit = Convert.ToDecimal(Console.ReadLine());
-                Console.WriteLine($"Enter Deposit Description: ");
-                var DepositDescription = Console.ReadLine();
-                AID = await CreateTransaction(Deposit, jsonOptions, CID, DepositDescription, "D");
-                NewBalance = await deposit(Deposit, AID, jsonOptions);
-                Console.WriteLine($"New Balance: {NewBalance}");
-                return 1;
+                return await Menu.Deposit(jsonOptions, CID, http);
                 case 4:
-                Console.WriteLine($"Enter Withdraw Amount: ");
-                var Withdraw = Convert.ToDecimal(Console.ReadLine());
-                Console.WriteLine($"Enter Withdraw Description: ");
-                var WithdrawDescription = Console.ReadLine();
-                AID = await CreateTransaction(Withdraw, jsonOptions, CID, WithdrawDescription, "W");
-                NewBalance = await withdraw(Withdraw, AID, jsonOptions);
-                Console.WriteLine($"New Balance: {NewBalance}");
-                return 1;
+                return await Menu.Withdraw(jsonOptions, CID, http);
                 case 5:
-                Console.WriteLine($"Enter Transfer Amount: ");
-                var Transfer = Convert.ToDecimal(Console.ReadLine());
-
-                Console.WriteLine($"Enter Transfer Description: ");
-                var TransferDescription = Console.ReadLine();
-
-                Console.WriteLine($"Select which account to transfer From: ");
-                AID = await CreateTransaction(Transfer, jsonOptions, CID, TransferDescription, "W");
-                NewBalance = await withdraw(Transfer, AID, jsonOptions);
-                Console.WriteLine($"New Balance: {NewBalance}");
-
-                Console.WriteLine($"Select which account to transfer To: ");
-                AID = await CreateTransaction(Transfer, jsonOptions, CID, TransferDescription, "D");
-                NewBalance = await deposit(Transfer, AID, jsonOptions);
-                Console.WriteLine($"New Balance: {NewBalance}");
-
-                return 1;
+                return await Menu.Transfer(jsonOptions, CID, http);
                 case 6:
-                var tempacc = await DisplayAccounts(CID, jsonOptions);
-                AID = tempacc.ID;
-                var jsonResponse = await GetAllTransactions(jsonOptions, AID);
-                var Transactions = (IEnumerable<Transaction>)jsonResponse.DataReturned;
-                foreach (Transaction T in Transactions) {
-                    Console.WriteLine($"{T.ID}|{T.PreviousBalance}|{T.TransactionType}|{T.NewBalance}|{T.Description}|{T.CreationDate}");
-                }
-                return 1;
+                return await Menu.Transactions(jsonOptions, CID, http);
                 case 7:
                 return -1;
-
-                default: return 1;
+                default: return -1;
 
             }
         }
