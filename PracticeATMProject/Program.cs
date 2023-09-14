@@ -51,7 +51,7 @@ internal class Program {
             List<Account> Accounts = (List<Account>)JsonSerializer.Deserialize(json, typeof(IEnumerable<Account>), jsonOptions);
             if (Accounts is null) { throw new Exception(); }
 
-            List<Account> AccountsR = null;
+            List<Account> AccountsR = new();
             foreach (var a in Accounts) {
                 if (a.CustomerID == CID) {
                     AccountsR.Add(a);
