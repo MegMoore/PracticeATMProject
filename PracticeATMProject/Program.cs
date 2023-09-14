@@ -1,5 +1,7 @@
 ﻿using PracticeATMProject;
+using System.Security.Cryptography;
 using System.Text.Json;
+//using System.Transactions;
 
 internal class Program {
     private static async Task Main(string[] args) {
@@ -21,6 +23,7 @@ internal class Program {
             int Pcode = 1;
             while (Logged) {
                 Pcode = await Display(Pcode, CID, joptions);
+                if (Pcode == -1) { Logged = false; };
             }
         }
 
@@ -104,7 +107,7 @@ internal class Program {
             decimal NewBalance = 0m;
             switch (pcode) {
                 case 1:
-                Console.WriteLine($"(B)Balance\n(D)Deposit\n(W)Withdraw\n(T)Transfer\n(S)Show Transactions)");
+                Console.WriteLine($"(B)Balance\n(D)Deposit\n(W)Withdraw\n(T)Transfer\n(S)Show Transactions\n(X)Logout");
                 Console.WriteLine("Enter Menu Option: ");
                 var Input1 = Console.ReadLine();
                 var Output = 0;
@@ -123,6 +126,9 @@ internal class Program {
                     break;
                     case "S":
                     Output = 6;
+                    break;
+                    case "X":
+                    Output= 7;
                     break;
                     default:
                     Output = 1;
@@ -169,6 +175,17 @@ internal class Program {
                 Console.WriteLine($"New Balance: {NewBalance}");
 
                 return 1;
+                case 6:
+                var tempacc = await DisplayAccounts(CID, jsonOptions);
+                AID = tempacc.ID;
+                var jsonResponse = await GetAllTransactions(jsonOptions, AID);
+                var Transactions = (IEnumerable<Transaction>)jsonResponse.DataReturned;
+                foreach (Transaction T in Transactions) {
+                    Console.WriteLine($"{T.ID}|{T.PreviousBalance}|{T.TransactionType}|{T.NewBalance}|{T.Description}|{T.CreationDate}");
+                }
+                return 1;
+                case 7:
+                return -1;
 
                 default: return 1;
 
@@ -264,6 +281,28 @@ internal class Program {
             req.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
             HttpResponseMessage resp = await http.SendAsync(req);
             return acc.Balance;
+        }
+
+        async Task<JsonResponse> GetAllTransactions(JsonSerializerOptions jsonOptions, int AID) {
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, $"{baseurl}/api/transactions");
+            HttpResponseMessage resp = await http.SendAsync(req);
+            Console.WriteLine($"Http ErrorCode is {resp.StatusCode}");
+            if (resp.StatusCode != System.Net.HttpStatusCode.OK) { }
+            var json = await resp.Content.ReadAsStringAsync();
+            List<Transaction> Transactions = (List<Transaction>)JsonSerializer.Deserialize(json, typeof(IEnumerable<Transaction>), jsonOptions);
+            if (Transactions is null) { throw new Exception(); }
+
+            List<Transaction> TransactionsR = new();
+            foreach (var T in Transactions) {
+                if (T.AccountID == AID) {
+                    TransactionsR.Add(T);
+                }
+            }
+
+            return new JsonResponse() {
+                HttpStatusCode = (int)resp.StatusCode,
+                DataReturned = TransactionsR
+            };
         }
     }
 }
