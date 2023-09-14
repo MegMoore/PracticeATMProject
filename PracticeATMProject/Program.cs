@@ -27,8 +27,8 @@ internal class Program {
         async Task<JsonResponse> GetCustomersAsync(HttpClient http, JsonSerializerOptions jsonOptions) {
             HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, $"{baseurl}/api/customers");//calling what you want
             HttpResponseMessage resp = await http.SendAsync(req);
-            //Console.WriteLine($"Http ErrorCode is {resp.StatusCode}");
-            //if (resp.StatusCode != System.Net.HttpStatusCode.OK) {}
+            Console.WriteLine($"Http ErrorCode is {resp.StatusCode}");
+            if (resp.StatusCode != System.Net.HttpStatusCode.OK) { }
             var json = await resp.Content.ReadAsStringAsync();
             var customers = (IEnumerable<Customer>?)JsonSerializer.Deserialize(json, typeof(IEnumerable<Customer>), jsonOptions);
             if (customers is null) {
@@ -66,6 +66,9 @@ internal class Program {
         }
 
         async Task<JsonResponse> GetAccountByAIDAsync(HttpClient http, JsonSerializerOptions jsonOptions, int AID) {
+
+            //Console.WriteLine($"DEBUG: int AID = {AID}");
+
             HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, $"{baseurl}/api/accounts/{AID}");
             HttpResponseMessage resp = await http.SendAsync(req);
             Console.WriteLine($"Http ErrorCode is {resp.StatusCode}");
@@ -102,7 +105,7 @@ internal class Program {
             switch (pcode) {
                 case 1:
                 Console.WriteLine($"(B)Balance\n(D)Deposit\n(W)Withdraw\n(T)Transfer\n(S)Show Transactions)");
-                Console.WriteLine("Enter Menu Option 1-5: ");
+                Console.WriteLine("Enter Menu Option: ");
                 var Input1 = Console.ReadLine();
                 var Output = 0;
                 switch (Input1) {
@@ -189,6 +192,7 @@ internal class Program {
 
             foreach (var a in Accounts) {
                 if (a.ID == IN) {
+                    //Console.WriteLine($"{a.ID}|{a.Description}|{a.Type}|{a.CreationDate}");//temp for debug
                     return a;
                 }
             }
@@ -197,7 +201,7 @@ internal class Program {
 
         async Task<int> CreateTransaction(decimal D, JsonSerializerOptions JsonOptions, int CID, string DD, string Type) {
             HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, $"{baseurl}/api/transactions");
-            var acc = DisplayAccounts(CID, JsonOptions);
+            Account acc = await DisplayAccounts(CID, JsonOptions);
             //Transaction T = new() {
             //  AccountID = acc.Id,
             //  PreviousBalance = acc.Result.Balance,
@@ -212,19 +216,19 @@ internal class Program {
             switch (Type) {
                 case "D":
                 T = new() {
-                    AccountID = acc.Id,
-                    PreviousBalance = acc.Result.Balance,
+                    AccountID = acc.ID,
+                    PreviousBalance = acc.Balance,
                     TransactionType = Type,
-                    NewBalance = acc.Result.Balance + D,
+                    NewBalance = acc.Balance + D,
                     Description = DD
                 };
                 break;
                 case "W":
                 T = new() {
-                    AccountID = acc.Id,
-                    PreviousBalance = acc.Result.Balance,
+                    AccountID = acc.ID,
+                    PreviousBalance = acc.Balance,
                     TransactionType = Type,
-                    NewBalance = acc.Result.Balance - D,
+                    NewBalance = acc.Balance - D,
                     Description = DD
                 };
                 break;
@@ -235,7 +239,7 @@ internal class Program {
             var json = JsonSerializer.Serialize<Transaction>(T, JsonOptions);
             req.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
             HttpResponseMessage resp = await http.SendAsync(req);
-            return acc.Id;
+            return acc.ID;
         }
 
         async Task<decimal> deposit(decimal IN, int AID, JsonSerializerOptions JsonOptions) {
